@@ -412,3 +412,117 @@ keyLight.position.set(5, 8, 5);
 - Edge 90+
 
 Requires WebGL 2.0 support.
+
+---
+
+## Deployment (Vercel CI/CD)
+
+This project includes automated deployment to Vercel via GitHub Actions.
+
+### How It Works
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Push to main          Push PR                         │
+│       │                   │                            │
+│       ▼                   ▼                            │
+│  ┌─────────┐        ┌─────────┐                       │
+│  │  Build  │        │  Build  │                       │
+│  └────┬────┘        └────┬────┘                       │
+│       │                   │                            │
+│       ▼                   ▼                            │
+│  ┌─────────┐        ┌─────────────┐                   │
+│  │ Deploy  │        │   Deploy    │                   │
+│  │  Prod   │        │   Preview   │                   │
+│  └─────────┘        └─────────────┘                   │
+│       │                   │                            │
+│       ▼                   ▼                            │
+│  your-app.vercel.app    unique-preview-url.vercel.app │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Setup Steps
+
+#### 1. Create Vercel Project
+
+```bash
+# Install Vercel CLI
+npm install -g vercel
+
+# Login to Vercel
+vercel login
+
+# Link project (run in project root)
+vercel link
+```
+
+#### 2. Get Vercel Credentials
+
+After linking, find your IDs in `.vercel/project.json`:
+
+```json
+{
+  "orgId": "your-org-id",
+  "projectId": "your-project-id"
+}
+```
+
+Get your token from: https://vercel.com/account/tokens
+
+#### 3. Add GitHub Secrets
+
+Go to your GitHub repo → Settings → Secrets and variables → Actions
+
+Add these secrets:
+
+| Secret Name | Value |
+|-------------|-------|
+| `VERCEL_TOKEN` | Your Vercel API token |
+| `VERCEL_ORG_ID` | From `.vercel/project.json` |
+| `VERCEL_PROJECT_ID` | From `.vercel/project.json` |
+
+#### 4. Push to GitHub
+
+```bash
+git add .
+git commit -m "Add Vercel CI/CD"
+git push origin main
+```
+
+### Deployment Triggers
+
+| Event | Action |
+|-------|--------|
+| Push to `main` | Deploy to production |
+| Open/update PR | Deploy preview (unique URL) |
+
+### Manual Deployment
+
+```bash
+# Preview deployment
+vercel
+
+# Production deployment
+vercel --prod
+```
+
+### Vercel Configuration
+
+The `vercel.json` file configures:
+
+```json
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "installCommand": "npm install"
+}
+```
+
+### Workflow File
+
+Located at `.github/workflows/deploy.yml`:
+
+1. **lint-and-build** - Installs deps, builds project
+2. **deploy-preview** - Deploys PR to preview URL
+3. **deploy-production** - Deploys main branch to production
